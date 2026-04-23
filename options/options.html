@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GitHub Fork Sync - Options</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; width: 300px; }
+    .form-group { margin-bottom: 15px; }
+    input[type="text"] { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+    button { padding: 10px 15px; background: #2ea44f; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #2c974b; }
+    #status { color: green; margin-top: 10px; display: none; }
+  </style>
+</head>
+<body>
+  <h2>Settings</h2>
+  
+  <div class="form-group">
+    <label for="gh-token">GitHub Personal Access Token:</label>
+    <input type="text" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" />
+    <small>Generate a token with 'repo' scope.</small>
+  </div>
+
+  <button id="save-btn">Save</button>
+  <div id="status">Options saved successfully!</div>
+
+  <!-- Load scripts in order -->
+  <script src="../lib/storage.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

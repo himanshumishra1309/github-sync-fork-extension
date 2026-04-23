@@ -1,0 +1,28 @@
+{
+    "manifest_version": 3,
+    "name": "Github Fork Sync",
+    "version": "1.0.0",
+    "description": "Keep your Github forks in sync automatically and see how far behind they are.",
+    "permission": [
+        "storage",
+        "alarms"
+    ],
+    "host_permissions": [
+        "https://api.github.com/*"
+    ],
+    "action": {
+        "default_popup": "popup/popup.html",
+        "default_title": "Sync Forks"
+    },
+    "option_page": "options/options.html",
+    "background": {
+        "service_worker": "background/service_worker.js"
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://github.com/*"],
+            "js": ["content/content.js"],
+            "css": ["content/content.css"]
+        }
+    ]
+}
