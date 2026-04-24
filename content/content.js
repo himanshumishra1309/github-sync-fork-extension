@@ -1,6 +1,7 @@
 console.log("Hello from my extension! The current URL is: " + window.location.href);
 
 let lastUrl = location.href;
+let selectedForksToSync = [];
 
 const observer = new MutationObserver(() => {
     if(location.href !== lastUrl){
@@ -18,12 +19,44 @@ function evaluatePage(){
     if(url.includes('tab=repositories') && !url.includes('type=fork')){
         console.log("We are on the Mixed Repositories Tab!");
         setTimeout(injectIntoRepoList, 500);
+        setTimeout(injectIntoHeaderOptions, 500);
     }
 
     else if(url.includes('fork=true') || url.includes('type=fork')){
         console.log("We are on the Mixed Repositories Tab!");
         injectIntoRepoList();
+        injectIntoHeaderOptions()
     }
+}
+
+function injectIntoHeaderOptions(){
+    console.log('Header option addition start')
+
+    const searchInput = document.querySelector('#your-repos-filter');
+    
+    if(!searchInput) {
+        console.log("Search bar not found yet!");
+        return; 
+    }
+
+    const headerOptions = searchInput.closest('.d-flex') || searchInput.parentElement;
+
+    if(document.querySelector('.github-fork-sync-all')) return;
+
+    const forkAll = document.createElement('button')
+    
+    forkAll.className = 'btn btn-primary ml-3 github-fork-sync-all'
+    forkAll.innerText = 'Sync All Forks'
+    forkAll.style.marginLeft = '12px';
+
+    forkAll.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log("Sync All Forks clicked!");
+        forkAll.innerText = 'Syncing...';
+        forkAll.disabled = true;
+    });
+
+    headerOptions.append(forkAll);
 }
 
 function injectIntoRepoList() {
@@ -79,8 +112,69 @@ function injectIntoRepoList() {
 
                 footerElement.prepend(statsContainer)
             }
+
+            const starAndStatsDiv = repo.querySelector('div.col-2.d-flex.flex-column.flex-justify-around.flex-items-end.tmp-ml-3');
+
+            if(starAndStatsDiv){                
+                const selectBtn = document.createElement('button');
+                selectBtn.className = 'btn btn-sm mb-2 github-select-fork-btn';
+                selectBtn.style.width = '100%';
+                selectBtn.innerText = 'Select Fork'
+                selectBtn.innerHTML = `
+                    <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon mr-1">
+                        <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                    </svg>
+                    <span>Select Fork</span>`;
+                
+                selectBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    if(selectBtn.querySelector('span').innerText == 'Select Fork') {
+                        selectBtn.classList.remove('btn');
+                        selectBtn.classList.add('btn-primary');
+                        selectBtn.innerHTML = `
+                            <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon mr-1">
+                                <circle cx="8" cy="8" r="7" fill="currentColor"></circle>
+                                <path d="M11.5 5.5l-4 4-2-2" stroke="white" stroke-width="2" fill="none"></path>
+                            </svg>
+                            <span>Selected</span>`;
+                        
+                        syncBtn.disabled = true;
+                        selectedForksToSync.push(repoName);
+                        console.log(selectedForksToSync);
+                    }
+                    else {
+                        selectBtn.classList.remove('btn-primary');
+                        selectBtn.classList.add('btn');
+                        selectBtn.innerHTML = `
+                            <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon mr-1">
+                                <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                            </svg>
+                            <span>Select Fork</span>`;
+                        
+                        syncBtn.disabled = false;
+                        selectedForksToSync = selectedForksToSync.filter(name => name != repoName);
+                        console.log(selectedForksToSync);
+                    }
+
+                    updateMainButton();
+                })
+                
+                starAndStatsDiv.prepend(selectBtn);
+            }
         }
     })
+}
+
+function updateMainButton(){
+    const bigButton = document.querySelector('.github-fork-sync-all');
+    if(!bigButton) return;
+    
+    if(selectedForksToSync.length == 0){
+        bigButton.innerText = 'Sync All Fork';
+    }
+    else{
+        bigButton.innerText = `Sync Selected ${selectedForksToSync.length}`;
+    }
 }
 
 evaluatePage();
