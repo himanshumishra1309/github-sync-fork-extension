@@ -171,9 +171,14 @@ function injectIntoRepoList() {
                         }
                     }
 
-                    else{
-                        behindSpan.innerText = `Behind: ?`;
-                        syncSpan.innerText = `⌚ Error fetching`;
+                    else {
+                        if (response.error && response.error.includes("token")) {
+                            behindSpan.innerText = `⚠️ Click extension to add PAT`;
+                            syncSpan.innerText = ``;
+                        } else {
+                            behindSpan.innerText = `Behind: ?`;
+                            syncSpan.innerText = `⌚ Error fetching`;
+                        }
                     }
                 })
             }

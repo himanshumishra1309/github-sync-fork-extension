@@ -47,7 +47,7 @@ async function handleSync(repoFullName){
         const repoInfo = await GitHubAPI.getRepoInfo(owner, repo);
         const defaultBranch = repoInfo.default_branch;
 
-        GitHubAPI.syncFork(owner, repo, defaultBranch);
+        await GitHubAPI.syncFork(owner, repo, defaultBranch);
 
         await Storage.saveSyncTime(repoFullName);
 

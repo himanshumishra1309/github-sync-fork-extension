@@ -3,7 +3,7 @@
     "name": "Github Fork Sync",
     "version": "1.0.0",
     "description": "Keep your Github forks in sync automatically and see how far behind they are.",
-    "permission": [
+    "permissions": [
         "storage",
         "alarms"
     ],
@@ -14,7 +14,7 @@
         "default_popup": "popup/popup.html",
         "default_title": "Sync Forks"
     },
-    "option_page": "options/options.html",
+    "options_page": "options/options.html",
     "background": {
         "service_worker": "background/service_worker.js"
     },
