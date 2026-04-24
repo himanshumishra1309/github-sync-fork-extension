@@ -7,7 +7,7 @@ try {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse)=>{
     if(request.action === "GET_STATS"){
         console.log("Service Worker heard a sync Request for: ", request.repoName);
-        handleSync(request.repoName).then(sendResponse);
+        handleGetStats(request.repoName).then(sendResponse);
         return true;
     }
 
@@ -18,7 +18,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse)=>{
     }
 });
 
-async function handleSync(repoFullName){
+async function handleGetStats(repoFullName){
     try {
         const [owner, repo] = repoFullName.split('/');
         const repoInfo = await GitHubAPI.getRepoInfo(owner, repo);

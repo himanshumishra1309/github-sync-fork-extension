@@ -49,11 +49,39 @@ function injectIntoHeaderOptions(){
     forkAll.innerText = 'Sync All Forks'
     forkAll.style.marginLeft = '12px';
 
-    forkAll.addEventListener('click', (e) => {
+    forkAll.addEventListener('click', async (e) => {
         e.preventDefault();
+        let reposToSync = [];
+
+        if(selectedForksToSync.length > 0){
+            reposToSync = selectedForksToSync;
+        }
+        else{
+            document.querySelectorAll('a[itemprop="name codeRepository"]').forEach(el => {
+                reposToSync.push(el.getAttribute('href').substring(1));
+            });
+        }
+
+        if(reposToSync.length === 0) return;
+
         console.log("Sync All Forks clicked!");
         forkAll.innerText = 'Syncing...';
         forkAll.disabled = true;
+
+        for(const fullPath of reposToSync){
+            try{
+                await chrome.runtime.sendMessage({action: "SYNC_FORK", repoName: fullPath})
+            } catch(error){
+                console.error("error syncing all forks: ", error.message)
+            }
+        }
+
+        forkAll.innerText = "All Synced ✓";
+
+        setTimeout(()=> {
+            selectedForksToSync = [];
+            evaluatePage();
+        }, 2000)
     });
 
     headerOptions.append(forkAll);
@@ -94,7 +122,7 @@ function injectIntoRepoList() {
 
                 if(response && response.success){
                     syncBtn.innerText = 'Synced ✓';
-                    syncBtn.className = 'btn btn-sm btn-primary github-fork-sync-btn'; // Turn it blue/green
+                    syncBtn.className = 'btn btn-sm btn-primary github-fork-sync-btn';
                     // You could also update the "Behind: 24" text to "Behind: 0" here!
                 } else {
                     // It failed!
@@ -117,18 +145,37 @@ function injectIntoRepoList() {
                 statsContainer.className ='github-fork-sync-stats';
                 statsContainer.style.marginRight = '16px'
 
-                const commitsBehind = '24';
-                const lastSynced = '28-03-2026'
-
                 statsContainer.innerHTML = `
                     <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon octicon-git-commit mr-1">
                         <path d="M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5h-3.32ZM8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"></path>
                     </svg>
-                    <span style="font-weight: 500; color: #cf222e;">Behind: ${commitsBehind}</span>
-                    <span style="margin-left: 8px;" title="Last auto-synced">⌚ Last Synced: ${lastSynced}</span>
-                `
+                    <span class="commits-behind" style="font-weight: 500; color: #cf222e;">Checking...</span>
+                    <span class="last-synced" style="margin-left: 8px;" title="Last auto-synced">⌚ Fetching time...</span>
+                `;
 
-                footerElement.prepend(statsContainer)
+                footerElement.prepend(statsContainer);
+
+                chrome.runtime.sendMessage({action: "GET_STATS", repoName: fullRepoPath}, (response) => {
+                    const behindSpan = statsContainer.querySelector('.commits-behind');
+                    const syncSpan = statsContainer.querySelector('.last-synced');
+
+                    if(response && response.success){
+                        behindSpan.innerText = `Behind: ${response.behindBy}`;
+                        if(response.behindBy === 0) behindSpan.style.color = '#1a7f37';
+
+                        syncSpan.innerText = `⌚ Last Synced: ${response.lastSynced}`;
+
+                        if(response.behindBy === 0){
+                            syncBtn.disabled = true;
+                            syncBtn.innerText = 'Up to date';
+                        }
+                    }
+
+                    else{
+                        behindSpan.innerText = `Behind: ?`;
+                        syncSpan.innerText = `⌚ Error fetching`;
+                    }
+                })
             }
 
             const starAndStatsDiv = repo.querySelector('div.col-2.d-flex.flex-column.flex-justify-around.flex-items-end.tmp-ml-3');
@@ -146,7 +193,9 @@ function injectIntoRepoList() {
                 
                 selectBtn.addEventListener('click', (event) => {
                     event.preventDefault();
-                    if(selectBtn.querySelector('span').innerText == 'Select Fork') {
+                    const isCurrentlySelected = selectedForksToSync.includes(fullRepoPath);
+
+                    if(!isCurrentlySelected) {
                         selectBtn.classList.remove('btn');
                         selectBtn.classList.add('btn-primary');
                         selectBtn.innerHTML = `
@@ -157,7 +206,7 @@ function injectIntoRepoList() {
                             <span>Selected</span>`;
                         
                         syncBtn.disabled = true;
-                        selectedForksToSync.push(repoName);
+                        selectedForksToSync.push(fullRepoPath);
                         console.log(selectedForksToSync);
                     }
                     else {
@@ -170,7 +219,7 @@ function injectIntoRepoList() {
                             <span>Select Fork</span>`;
                         
                         syncBtn.disabled = false;
-                        selectedForksToSync = selectedForksToSync.filter(name => name != repoName);
+                        selectedForksToSync = selectedForksToSync.filter(name => name != fullRepoPath);
                         console.log(selectedForksToSync);
                     }
 
