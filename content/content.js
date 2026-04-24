@@ -72,6 +72,7 @@ function injectIntoRepoList() {
         if(isFork){
             const repoNameElement = repo.querySelector('a[itemprop="name codeRepository"]');
             const repoName = repoNameElement ? repoNameElement.innerText.trim() : "Unknown Fork";
+            const fullRepoPath = repoNameElement ? repoNameElement.getAttribute('href').substring(1) : "";
 
             const syncBtn = document.createElement('button');
             syncBtn.innerText = 'Sync Fork';
@@ -80,11 +81,28 @@ function injectIntoRepoList() {
             syncBtn.style.marginLeft = '10px';
             syncBtn.style.verticalAlign = 'middle';
 
-            syncBtn.addEventListener('click', (event) => {
+            syncBtn.addEventListener('click', async (event) => {
                 event.preventDefault();
                 console.log(`User Requested to sync: ${repoName}`)
                 syncBtn.innerText = 'Syncing...';
                 syncBtn.disabled = true;
+
+                const response = await chrome.runtime.sendMessage({
+                    action: 'SYNC_FORK',
+                    repoName: fullRepoPath
+                });
+
+                if(response && response.success){
+                    syncBtn.innerText = 'Synced ✓';
+                    syncBtn.className = 'btn btn-sm btn-primary github-fork-sync-btn'; // Turn it blue/green
+                    // You could also update the "Behind: 24" text to "Behind: 0" here!
+                } else {
+                    // It failed!
+                    syncBtn.innerText = 'Failed';
+                    syncBtn.className = 'btn btn-sm btn-danger github-fork-sync-btn'; // Turn it red
+                    console.error("Sync Error:", response ? response.error : "Unknown error");
+                    syncBtn.disabled = false; 
+                }
             })
 
             const titleElement = repo.querySelector('h3');
