@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async ()=> {
     }
 
     saveBtn.addEventListener('click' , async () => {
-        const token = tokenInput.ariaValueMax.trim();
+        const token = tokenInput.value.trim();
 
         if(!token) return showMessage('Please enter a token', true);
 

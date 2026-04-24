@@ -123,7 +123,20 @@ function injectIntoRepoList() {
                 if(response && response.success){
                     syncBtn.innerText = 'Synced ✓';
                     syncBtn.className = 'btn btn-sm btn-primary github-fork-sync-btn';
-                    // You could also update the "Behind: 24" text to "Behind: 0" here!
+
+                    const repoRow = repoNameElement.closest('li');
+
+                    const behindSpan = repoRow.querySelector('.commit-behind');
+
+                    if (behindSpan) {
+                        behindSpan.innerText = 'Behind: 0';
+                        behindSpan.style.color = '#1a7f37';
+                    }
+
+                    const syncSpan = repoRow.querySelector('.last-synced');
+                    if (syncSpan) {
+                        syncSpan.innerText = `⌚ Last Synced: ${response.lastSynced}`; 
+                    }
                 } else {
                     // It failed!
                     syncBtn.innerText = 'Failed';
