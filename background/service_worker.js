@@ -56,6 +56,12 @@ async function handleSync(repoFullName){
         return {success: true, lastSynced: updatedTime};
     } catch (error) {
         console.error("Sync Failed: ", error.message);
+        let friendlyError = error.message;
+        if (friendlyError.includes("422") || friendlyError.includes("workflow")) {
+            friendlyError = "Missing 'workflow' or 'repo' token permissions in settings.";
+        } else if (friendlyError.includes("409")) {
+            friendlyError = "Merge conflict! You must do this one manually.";
+        }
         return {success: false, error: error.message};
     }
 }

@@ -101,6 +101,8 @@ function injectIntoRepoList() {
             const repoNameElement = repo.querySelector('a[itemprop="name codeRepository"]');
             const repoName = repoNameElement ? repoNameElement.innerText.trim() : "Unknown Fork";
             const fullRepoPath = repoNameElement ? repoNameElement.getAttribute('href').substring(1) : "";
+            let isRepoUpToDate = false;
+            let selectBtn = null;
 
             const syncBtn = document.createElement('button');
             syncBtn.innerText = 'Sync Fork';
@@ -121,24 +123,49 @@ function injectIntoRepoList() {
                 });
 
                 if(response && response.success){
-                    syncBtn.innerText = 'Synced ✓';
-                    syncBtn.className = 'btn btn-sm btn-primary github-fork-sync-btn';
+                    setTimeout(()=>{
 
-                    const repoRow = repoNameElement.closest('li');
+                        syncBtn.innerText = 'Up to Date';
+                        syncBtn.className = 'btn btn-sm btn-outline github-fork-sync-btn';
+                        syncBtn.disabled = true;
 
-                    const behindSpan = repoRow.querySelector('.commit-behind');
+                        const repoRow = repoNameElement.closest('li');
+                        
+                        const behindSpan = repoRow.querySelector('.commits-behind');
+                        console.log({behindSpan});
+                        
+                        if (behindSpan) {
+                            behindSpan.innerText = 'Behind: 0';
+                            behindSpan.style.color = '#1a7f37';
+                        }
+                        
+                        const syncSpan = repoRow.querySelector('.last-synced');
+                        if (syncSpan) {
+                            syncSpan.innerText = `⌚ Last Synced: ${response.lastSynced}`; 
+                        }
 
-                    if (behindSpan) {
-                        behindSpan.innerText = 'Behind: 0';
-                        behindSpan.style.color = '#1a7f37';
-                    }
+                        const sBtn = repoRow.querySelector('.github-select-fork-btn');
+                        if (sBtn) {
+                            sBtn.disabled = true;
+                            sBtn.style.opacity = '0.6';
+                            sBtn.style.cursor = 'not-allowed';
+                            sBtn.title = 'Repo is already up to date';
+                            
+                            sBtn.classList.remove('btn-primary');
+                            sBtn.classList.add('btn');
+                            sBtn.innerHTML = `
+                                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon mr-1">
+                                    <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                                </svg>
+                                <span>Select Fork</span>`;
+                        }
 
-                    const syncSpan = repoRow.querySelector('.last-synced');
-                    if (syncSpan) {
-                        syncSpan.innerText = `⌚ Last Synced: ${response.lastSynced}`; 
-                    }
+                        isRepoUpToDate = true;
+                        
+                        selectedForksToSync = selectedForksToSync.filter(name => name !== fullRepoPath);
+                        updateMainButton();
+                    }, 1000)
                 } else {
-                    // It failed!
                     syncBtn.innerText = 'Failed';
                     syncBtn.className = 'btn btn-sm btn-danger github-fork-sync-btn'; // Turn it red
                     console.error("Sync Error:", response ? response.error : "Unknown error");
@@ -179,12 +206,30 @@ function injectIntoRepoList() {
                         syncSpan.innerText = `⌚ Last Synced: ${response.lastSynced}`;
 
                         if(response.behindBy === 0){
+                            isRepoUpToDate = true;
                             syncBtn.disabled = true;
                             syncBtn.innerText = 'Up to date';
+
+                            if (selectBtn) {
+                                selectBtn.disabled = true;
+                                selectBtn.style.opacity = '0.6';
+                                selectBtn.style.cursor = 'not-allowed';
+                                selectBtn.title = 'Repo is already up to date';
+                            }
+
+                            selectedForksToSync = selectedForksToSync.filter(name => name !== fullRepoPath);
+                            updateMainButton();
                         }
                     }
 
                     else {
+                        isRepoUpToDate = false;
+                        if (selectBtn) {
+                            selectBtn.disabled = false;
+                            selectBtn.style.opacity = '1';
+                            selectBtn.style.cursor = 'pointer';
+                            selectBtn.title = '';
+                        }
                         if (response.error && response.error.includes("token")) {
                             behindSpan.innerText = `⚠️ Click extension to add PAT`;
                             syncSpan.innerText = ``;
@@ -199,7 +244,7 @@ function injectIntoRepoList() {
             const starAndStatsDiv = repo.querySelector('div.col-2.d-flex.flex-column.flex-justify-around.flex-items-end.tmp-ml-3');
 
             if(starAndStatsDiv){                
-                const selectBtn = document.createElement('button');
+                selectBtn = document.createElement('button');
                 selectBtn.className = 'btn btn-sm mb-2 github-select-fork-btn';
                 selectBtn.style.width = '100%';
                 selectBtn.innerText = 'Select Fork'
@@ -208,9 +253,12 @@ function injectIntoRepoList() {
                         <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle>
                     </svg>
                     <span>Select Fork</span>`;
+
+                
                 
                 selectBtn.addEventListener('click', (event) => {
                     event.preventDefault();
+                    if(isRepoUpToDate) return;
                     const isCurrentlySelected = selectedForksToSync.includes(fullRepoPath);
 
                     if(!isCurrentlySelected) {
