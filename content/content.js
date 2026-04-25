@@ -301,12 +301,23 @@ function injectIntoRepoList() {
 function updateMainButton(){
     const bigButton = document.querySelector('.github-fork-sync-all');
     if(!bigButton) return;
-    
-    if(selectedForksToSync.length == 0){
-        bigButton.innerText = 'Sync All Fork';
+
+    const allSyncBtns = Array.from(document.querySelectorAll('.github-fork-sync-btn'));
+
+    const allAreSynced = allSyncBtns.length > 0 && allSyncBtns.every(btn => btn.disabled);
+
+    if(allAreSynced){
+        bigButton.innerHTML = 'All Forks Synced';
+        bigButton.disabled = true;
     }
     else{
-        bigButton.innerText = `Sync Selected ${selectedForksToSync.length}`;
+        bigButton.disabled = false;
+        if(selectedForksToSync.length == 0){
+            bigButton.innerText = 'Sync All Fork';
+        }
+        else{
+            bigButton.innerText = `Sync Selected ${selectedForksToSync.length}`;
+        }
     }
 }
 
