@@ -11,9 +11,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse)=>{
         return true;
     }
 
-    if(request.action === "SYNC_FORK"){
+    else if(request.action === "SYNC_FORK"){
         console.log(`Service Worker syncing : ${request.repoName}`);
         handleSync(request.repoName).then(sendResponse);
+        return true;
+    }
+
+    else if(request.action === "GET_CURRENT_USER"){
+        GitHubAPI.request('/user')
+        .then(user=>{
+            sendResponse({success: true, login: user.login});
+        })
+        .catch(error => {
+            sendResponse({success: false, error: error.message})
+        })
+
         return true;
     }
 });

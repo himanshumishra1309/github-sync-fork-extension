@@ -18,14 +18,50 @@ function evaluatePage(){
 
     if(url.includes('tab=repositories') && !url.includes('type=fork')){
         console.log("We are on the Mixed Repositories Tab!");
-        setTimeout(injectIntoRepoList, 500);
-        setTimeout(injectIntoHeaderOptions, 500);
+        checkAndInject(500);
     }
 
     else if(url.includes('fork=true') || url.includes('type=fork')){
         console.log("We are on the Mixed Repositories Tab!");
-        injectIntoRepoList();
-        injectIntoHeaderOptions()
+        checkAndInject(0);
+    }
+}
+
+async function checkAndInject(delay){
+    const pathParts = window.location.pathname.split('/').filter(p=>p)
+    const profileUsername = pathParts[0];
+
+    if(!profileUsername){
+        console.log("Could not extract username from the URL");
+        return;
+    }
+
+    try {
+        const response = await chrome.runtime.sendMessage({action: "GET_CURRENT_USER"});
+
+        if(response && response.success){
+            const currentUserLogin = response.login;
+
+            if(profileUsername === currentUserLogin){
+                console.log(`Authenticated user: ${currentUserLogin}, Profile: ${profileUsername} - MATCH! Injecting UI.`);
+                if(delay){
+                    setTimeout(injectIntoRepoList, delay);
+                    setTimeout(injectIntoHeaderOptions, delay);
+                }
+                else{
+                    injectIntoRepoList();
+                    injectIntoHeaderOptions();
+                }
+            }
+            else{
+                console.log(`Authenticated user: ${currentUserLogin}, Profile: ${profileUsername} - NO MATCH. Skipping injection.`);
+            }
+        }
+        else{
+            console.log("Could not fetch current user info");
+        }
+    } catch (error) {
+        console.error("Error checking current user:", error);
     }
 }
 
