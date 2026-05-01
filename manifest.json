@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Github Fork Sync",
+    "name": "GitHub Sync Fork",
     "version": "1.0.0",
     "description": "Keep your Github forks in sync automatically and see how far behind they are.",
     "permissions": [
